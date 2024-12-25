@@ -8,6 +8,7 @@ import {
   Image,
   Dimensions,
   ToastAndroid,
+  Linking,
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { router } from 'expo-router';
@@ -19,8 +20,12 @@ const { width } = Dimensions.get('window');
 const LoginScreen = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
-  // Navigasi ke halaman register
+  const setVisibility = () => {
+    setIsPasswordVisible(!isPasswordVisible);
+  };
+
   const handleSignup = () => {
     router.push('/signup');
   };
@@ -46,12 +51,18 @@ const LoginScreen = () => {
       await AsyncStorage.setItem('userEmail', data.data.email);
       await AsyncStorage.setItem('userName', data.data.name);
 
-      router.push('/home');
+      ToastAndroid.show('Login successful!', ToastAndroid.SHORT);
+
+      router.push('/dashboard');
     } catch (err) {
       console.log('Login gagal:', err);
       const msg = err?.response?.data?.message || 'Terjadi kesalahan';
       ToastAndroid.show(msg, ToastAndroid.SHORT);
     }
+  };
+
+  const handleRickRoll = () => {
+    Linking.openURL('https://youtu.be/dQw4w9WgXcQ?si=1dMyymkSdafSk8kn');
   };
 
   return (
@@ -91,10 +102,16 @@ const LoginScreen = () => {
               placeholder="Password"
               value={password}
               onChangeText={setPassword}
-              secureTextEntry
+              secureTextEntry={!isPasswordVisible}
               placeholderTextColor="#B0B0B0"
             />
-            <Ionicons name="lock-closed-outline" size={20} color="#8f8f8f" style={styles.icon} />
+            <Ionicons
+              name={isPasswordVisible ? 'eye-outline' : 'eye-off-outline'}
+              size={20}
+              color="#8f8f8f"
+              style={styles.icon}
+              onPress={setVisibility}
+            />
           </View>
 
           {/* Tombol Login */}
@@ -113,21 +130,21 @@ const LoginScreen = () => {
         {/* Login Sosial Media */}
         <Text style={styles.orText}>or login with</Text>
         <View style={styles.socialContainer}>
-          <TouchableOpacity style={styles.socialButton}>
+          <TouchableOpacity style={styles.socialButton} onPress={() => console.log('Google Login')}>
             <Image
               source={require('../assets/images/google.png')}
               style={styles.socialIcon}
             />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.socialButton}>
+          <TouchableOpacity style={styles.socialButton} onPress={handleRickRoll}>
             <Image
               source={require('../assets/images/facebook.png')}
               style={styles.socialIcon}
             />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.socialButton}>
+          <TouchableOpacity style={styles.socialButton} onPress={() => console.log('Twitter Login')}>
             <Image
               source={require('../assets/images/twitter.png')}
               style={styles.socialIcon}
@@ -174,7 +191,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    fontSize: 92,
+    fontSize: Math.min(width * 0.2, 36),
     color: '#6A64E8',
   },
   signUp: {

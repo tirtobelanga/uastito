@@ -8,6 +8,7 @@ export const loginSlice = createSlice({
             name: '',
             email: '',
             password: '',
+            confirm_password: '',
         }
     },
     reducers: {
@@ -20,6 +21,7 @@ export const loginSlice = createSlice({
                 name: '',
                 email: '',
                 password: '',
+                confirm_password: '',
             }
         }
     }

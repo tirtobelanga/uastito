@@ -1,6 +1,4 @@
-import React, { useState } from 'react'; 
-// Mengimpor React dan useState dari 'react' untuk mengelola state lokal.
-
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -9,159 +7,176 @@ import {
   StyleSheet,
   Image,
   Dimensions,
-  ToastAndroid
-} from 'react-native'; 
-// Mengimpor komponen-komponen yang diperlukan dari 'react-native'.
+  ToastAndroid,
+} from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import CApi from '@/lib/CApi';
 
-import Ionicons from 'react-native-vector-icons/Ionicons'; 
-// Mengimpor ikon dari 'react-native-vector-icons/Ionicons'.
-
-import { router } from 'expo-router'; 
-// Mengimpor router dari 'expo-router' untuk navigasi.
-
-const { width } = Dimensions.get('window'); 
-// Mendapatkan lebar layar dari dimensi perangkat.
+const { width } = Dimensions.get('window');
 
 const SignUpScreen = () => {
-  const [name, setName] = useState(''); 
-  const [email, setEmail] = useState(''); 
-  const [password, setPassword] = useState(''); 
-  // Inisialisasi state untuk menyimpan input name, email, dan password.
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false); // State untuk menampilkan/samarkan password
+  const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] = useState(false); // State untuk menampilkan/samarkan confirm password
+  const router = useRouter();
 
-  const login = () => {
-    router.push('/login'); 
-    // Fungsi untuk navigasi ke halaman login ketika tombol ditekan.
+  const setPasswordVisibility = () => {
+    setIsPasswordVisible(!isPasswordVisible); // Toggle visibility password
   };
 
-  const signUp = () => {
-    // Lakukan validasi jika diperlukan.
-    router.push('/login'); 
-    // Setelah mendaftar, diarahkan kembali ke halaman login.
+  const setConfirmPasswordVisibility = () => {
+    setIsConfirmPasswordVisible(!isConfirmPasswordVisible); // Toggle visibility confirm password
+  };
+
+  const handleSignUp = async () => {
+    // Validasi input
+    if (!name || !email || !password || !confirmPassword) {
+      ToastAndroid.show('All fields are required', ToastAndroid.SHORT);
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      ToastAndroid.show('Passwords do not match', ToastAndroid.SHORT);
+      return;
+    }
+
+    try {
+      // Menyiapkan payload untuk API
+      const payload = { name, email, password, confirm_password: confirmPassword };
+
+      // Mengirim request ke API untuk registrasi
+      const { data } = await CApi.post('/register', payload, {
+        headers: { 'Content-Type': 'text/plain' },
+      });
+
+      // Menampilkan pesan sukses
+      ToastAndroid.show('Register Success', ToastAndroid.SHORT);
+
+      // Menyimpan token ke AsyncStorage jika tersedia
+      if (data.token) {
+        await AsyncStorage.setItem('userToken', data.token);
+        console.log('Token saved successfully.');
+      }
+
+      // Berpindah ke halaman login setelah registrasi berhasil
+      router.replace('/login');
+      console.log('Redirecting to login...');
+    } catch (error) {
+      console.error('Registration failed:', error);
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.message ||
+        'Registration failed. Please try again.';
+      ToastAndroid.show(errorMessage, ToastAndroid.SHORT);
+    }
+  };
+
+  const goToLogin = () => {
+    router.push('/login');
   };
 
   return (
-    <View style={styles.wrapper}> 
-      {/* Membungkus seluruh konten halaman dengan gaya wrapper */}
-
+    <View style={styles.wrapper}>
       <View style={styles.sideLine}></View>
-      {/* Garis di sisi kiri sebagai elemen dekoratif */}
-
-      <View style={styles.container}> 
-        {/* Kontainer utama untuk konten halaman */}
-
-        <View style={styles.headerContainer}> 
-          {/* Header yang berisi "Login" dan "Sign up" */}
-          <Text style={styles.loginText} onPress={signUp}>Login</Text> 
-          {/* Teks "Login" sebagai tombol navigasi */}
-          <Text style={styles.title}>Sign up</Text> 
-          {/* Teks "Sign up" dengan font besar */}
+      <View style={styles.container}>
+        <View style={styles.headerContainer}>
+          <Text style={styles.loginText} onPress={goToLogin}>
+            Login
+          </Text>
+          <Text style={styles.title}>Sign up</Text>
         </View>
 
-        <View style={styles.subtitleContainer}> 
-          {/* Subtitle yang menjelaskan instruksi pendaftaran */}
-          <Text style={styles.subtitle}>Register your account now</Text>
-        </View>
+        <Text style={styles.subtitle}>Create your account</Text>
 
-        <View style={styles.signUpBox}> 
-          {/* Formulir untuk input pendaftaran */}
+        <View style={styles.signUpBox}>
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
-              placeholder="Your Name" 
-              value={name} 
-              onChangeText={setName} 
+              placeholder="Your Name"
+              value={name}
+              onChangeText={setName}
               placeholderTextColor="#B0B0B0"
             />
             <Ionicons name="person-outline" size={20} color="#8f8f8f" style={styles.icon} />
-            {/* Input untuk memasukkan nama pengguna */}
           </View>
-
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
               placeholder="Email Address"
-              value={email} 
-              onChangeText={setEmail} 
-              keyboardType="email-address" 
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
               autoCapitalize="none"
               placeholderTextColor="#B0B0B0"
             />
             <Ionicons name="mail-outline" size={20} color="#8f8f8f" style={styles.icon} />
-            {/* Input untuk memasukkan email */}
           </View>
-
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
               placeholder="Password"
-              value={password} 
-              onChangeText={setPassword} 
-              secureTextEntry 
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!isPasswordVisible}
               placeholderTextColor="#B0B0B0"
             />
-            <Ionicons name="lock-closed-outline" size={20} color="#8f8f8f" style={styles.icon} />
-            {/* Input untuk memasukkan kata sandi */}
+            <Ionicons
+              name={isPasswordVisible ? 'eye-outline' : 'eye-off-outline'}
+              size={20}
+              color="#8f8f8f"
+              style={styles.icon}
+              onPress={setPasswordVisibility}
+            />
           </View>
-
-          <TouchableOpacity style={styles.button} onPress={signUp}> 
-            <Text style={styles.buttonText}>SIGN UP</Text> 
-            {/* Tombol untuk melakukan pendaftaran */}
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.input}
+              placeholder="Confirm Password"
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              secureTextEntry={!isConfirmPasswordVisible}
+              placeholderTextColor="#B0B0B0"
+            />
+            <Ionicons
+              name={isConfirmPasswordVisible ? 'eye-outline' : 'eye-off-outline'}
+              size={20}
+              color="#8f8f8f"
+              style={styles.icon}
+              onPress={setConfirmPasswordVisibility}
+            />
+          </View>
+          <TouchableOpacity style={styles.button} onPress={handleSignUp}>
+            <Text style={styles.buttonText}>SIGN UP</Text>
           </TouchableOpacity>
         </View>
 
         <Text style={styles.orText}>or Register with</Text>
-        {/* Teks yang menunjukkan alternatif pendaftaran lewat media sosial */}
-
-        <View style={styles.socialContainer}> 
-          {/* Kontainer untuk ikon media sosial */}
+        <View style={styles.socialContainer}>
           <TouchableOpacity style={styles.socialButton}>
-            <View style={styles.iconContainer}>
-              <Image
-                source={require('../assets/images/google.png')}
-                style={styles.socialIcon}
-              />
-            </View>
+            <Image
+              source={require('../assets/images/google.png')}
+              style={styles.socialIcon}
+            />
           </TouchableOpacity>
-          {/* Tombol pendaftaran menggunakan Google */}
-
           <TouchableOpacity style={styles.socialButton}>
-            <View style={styles.iconContainer}>
-              <Image
-                source={require('../assets/images/facebook.png')}
-                style={styles.socialIcon}
-              />
-            </View>
+            <Image
+              source={require('../assets/images/facebook.png')}
+              style={styles.socialIcon}
+            />
           </TouchableOpacity>
-          {/* Tombol pendaftaran menggunakan Facebook */}
-
-          <TouchableOpacity style={styles.socialButton}>
-            <View style={styles.iconContainer}>
-              <Image
-                source={require('../assets/images/twitter.png')}
-                style={styles.socialIcon}
-              />
-            </View>
-          </TouchableOpacity>
-          {/* Tombol pendaftaran menggunakan Twitter */}
         </View>
 
-        <View style={styles.loginContainer}> 
-          {/* Kontainer untuk teks "Already have an account?" */}
+        <View style={styles.loginContainer}>
           <Text>Already have an account? </Text>
-          <TouchableOpacity onPress={login}>
+          <TouchableOpacity onPress={goToLogin}>
             <Text style={styles.loginTextLink}>Login</Text>
           </TouchableOpacity>
-          {/* Teks navigasi untuk mengarahkan ke halaman login */}
         </View>
-
-        <View style={styles.termsContainer}> 
-          {/* Teks yang menyatakan pengguna setuju dengan syarat dan ketentuan */}
-          <Text style={styles.termsText}>By signing up, you agree with our</Text>
-          <TouchableOpacity>
-            <Text style={styles.termsLink}> Terms & Conditions</Text>
-          </TouchableOpacity>
-        </View>
-
       </View>
     </View>
   );
@@ -171,7 +186,7 @@ const styles = StyleSheet.create({
   wrapper: {
     flex: 1,
     flexDirection: 'row',
-    backgroundColor: '#F0F4FF', // Background halaman
+    backgroundColor: '#F0F4FF',
   },
   sideLine: {
     width: 10,
@@ -194,17 +209,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loginText: {
-    fontSize: 32, // Ukuran teks login
+    fontSize: 32,
     color: '#A0A0A0',
   },
   title: {
-    fontSize: 72, // Ukuran teks Sign Up
-    color: '#6A64E8', // Warna biru keunguan
-  },
-  subtitleContainer: {
-    width: '100%',
-    alignItems: 'flex-end',
-    marginBottom: 20,
+    fontSize: 72,
+    color: '#6A64E8',
   },
   subtitle: {
     fontSize: 16,
@@ -270,19 +280,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  iconContainer: {
-    width: 60,
-    height: 60,
-    backgroundColor: '#fff',
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
-  },
   socialIcon: {
     width: 30,
     height: 30,
@@ -295,20 +292,6 @@ const styles = StyleSheet.create({
   loginTextLink: {
     color: '#000',
     textDecorationLine: 'underline',
-  },
-  termsContainer: {
-    flexDirection: 'row',
-    marginTop: 20,
-    justifyContent: 'center',
-  },
-  termsText: {
-    color: '#000',
-    fontSize: 12,
-  },
-  termsLink: {
-    color: '#000',
-    textDecorationLine: 'underline',
-    fontSize: 12,
   },
 });
 
